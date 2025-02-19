@@ -5,7 +5,9 @@ servers = [
     "RollerShades.py",
     "MotionDetector.py",
     "airControl.py",
-    "lampe.py"
+    "lampe.py",
+    "WeatherServer.py",
+    "ClimaServer.py"
 ]
 
 # Démarrer chaque serveur dans un sous-processus
