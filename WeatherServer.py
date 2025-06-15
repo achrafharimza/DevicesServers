@@ -17,28 +17,38 @@ TOPIC = "weather/status"
 client = mqtt.Client("weatherServer")
 client.connect(BROKER, PORT, 60)
 
-def get_temperature():
+def get_weather_data():
     """Récupère la température actuelle depuis OpenWeatherMap."""
     try:
         response = requests.get(API_URL)
         data = response.json()
-        return data["main"]["temp"]
+        if response.status_code == 200:
+            weather_info = {
+                "temperature": data["main"]["temp"],
+                "temp_max": data["main"]["temp_max"],
+                "temp_min": data["main"]["temp_min"],
+                "wind": round(data["wind"]["speed"] * 3.6, 2),  # Conversion en km/h
+                "humidity": data["main"]["humidity"]
+            }
+            return weather_info
+        else:
+            print(f"Erreur API : {data}")
+            return None
     except Exception as e:
-        print(f"Erreur lors de la récupération de la température : {e}")
+        print(f"Erreur lors de la récupération de la température weather: {e}")
         return None
 
-def publish_temperature():
-    """Publie la température actuelle sur MQTT."""
+def publish_weather():
     while True:
-        temp = get_temperature()
-        if temp is not None:
-            payload = json.dumps({"temperature": temp})
+        weather_data = get_weather_data()
+        if weather_data:
+            payload = json.dumps(weather_data)
             client.publish(TOPIC, payload)
-            print(f"Température publiée : {payload}")
-        time.sleep(300)  # Mise à jour toutes les 5 minutes
+            print(f"Données météo publiées : {payload}")
+        time.sleep(900)  # Met à jour toutes les 5 minutes
 
 if __name__ == "__main__":
     try:
-        publish_temperature()
+        publish_weather()
     except KeyboardInterrupt:
         print("Arrêt du serveur de température.")

@@ -14,7 +14,7 @@ def on_connect(client, userdata, flags, rc):
         print("Connecté au broker MQTT")
         client.subscribe("clima/command")  # Topic pour recevoir des commandes
     else:
-        print(f"Échec de connexion au broker, code : {rc}")
+        print(f"Échec de connexion au broker clima, code : {rc}")
 
 def on_message(client, userdata, msg):
     global climate_temperature

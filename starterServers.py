@@ -2,12 +2,12 @@ import subprocess
 
 # Liste des fichiers à exécuter
 servers = [
-    "RollerShades.py",
+    #"RollerShades.py",
     "MotionDetector.py",
-    "airControl.py",
+    #"airControl.py",
     "lampe.py",
-    "WeatherServer.py",
-    "ClimaServer.py"
+    #"WeatherServer.py",
+   # "ClimaServer.py"
 ]
 
 # Démarrer chaque serveur dans un sous-processus

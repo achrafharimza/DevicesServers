@@ -3,23 +3,26 @@ import json
 import time
 import random
 from datetime import datetime
+import serial
 
+arduino = serial.Serial('COM13', 9600, timeout=1)
+time.sleep(2)
 # État initial des détecteurs de mouvement (tous "OFF")
 motion_detector_states = {
-    "1": "OFF",
-    "2": "OFF",
-    "3": "OFF",
-    "4": "OFF"
+    "1": "ON",
+    "2": "ON",
+    "3": "ON",
+    "4": "ON"
 }
 
 # Callback lorsque le client se connecte au broker
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
-        print("Connecté au broker MQTT")
+        print("Connecté au broker MQTT motionDetector")
         # S'abonner au topic pour recevoir les commandes
         client.subscribe("motionDetector/command")
     else:
-        print(f"Échec de connexion au broker, code : {rc}")
+        print(f"Échec de connexion au broker motionDetector, code : {rc}")
 
 # Callback lorsque le client reçoit un message
 def on_message(client, userdata, msg):
@@ -57,25 +60,6 @@ def send_motion_detected(client, sensor_id):
     client.publish("motionDetector/motion", payload)
     print(f"Notification de mouvement envoyée : {payload}")
 
-# Simulation de mouvement pour les capteurs activés
-def simulate_motion(client):
-    while True:
-        # Filtrer les capteurs activés
-        active_sensors = [sid for sid, state in motion_detector_states.items() if state == "ON"]
-
-        if active_sensors:
-            # Sélectionner un capteur actif aléatoire
-            sensor_id = random.choice(active_sensors)
-
-            # Simuler un mouvement
-            motion_detected = random.choice([True, False])
-
-            if motion_detected:
-                send_motion_detected(client, sensor_id)
-
-        # Attente avant la prochaine simulation
-        time.sleep(random.randint(10, 17))  # Intervalle aléatoire de 3 à 7 secondes
-
 # Configuration du client MQTT
 def main():
     client = mqtt.Client("motion-detector-server")
@@ -91,10 +75,18 @@ def main():
     client.loop_start()
 
     try:
-        simulate_motion(client)
+        while True:
+            if arduino.in_waiting:
+               # line = arduino.readline().decode().strip()
+                line = arduino.readline().decode(errors='ignore').strip()
+                if ":MOTION_DETECTED" in line:
+                    sensor_id = line.split(":")[0]
+                    if motion_detector_states.get(sensor_id) == "ON":
+                        send_motion_detected(client, sensor_id)
+            time.sleep(0.1)
     except KeyboardInterrupt:
-        print("Arrêt du simulateur.")
-        client.loop_stop()
+                print("Arrêt du serveur.")
+                client.loop_stop()
 
 if __name__ == "__main__":
     main()
