@@ -1,10 +1,23 @@
 const int ledPins[4] = {0, 2, 3, 0}; 
-const int buttonPins[4] = {0, 4, 5, 8}; 
-const int pirPins[4] = {0, 12, 13, 0};
-bool lastButtonStates[4] = {HIGH, HIGH, HIGH, HIGH};
+const int ledButtonPins[4] = {0, 4, 5, 8}; 
+bool lastButtonStatesLed[4] = {HIGH, HIGH, HIGH, HIGH};
+
+const int pirPins[4] = {0, 0, 13, 0};
 bool lastMotionStates[4] = {LOW, LOW, LOW, LOW};
+
+const int pirLeds[4] = {0, 0, 12, 0}; 
+const int pirButton[4] = {0, 0, 11, 0};
+bool lastButtonStatesPirLed[4] = {HIGH, HIGH, HIGH, HIGH};
+
+bool pirEnabled[4] = {false, false, true, false}; // exemple : seul PIR[2] activé
+
+
+
+
+
+
 const int rollerShades[4] = {0, 0, 7, 0}; 
-const int rollerShadesButton[4] = {0, 0, 8, 0}; 
+const int rollerShadesButton[4] = {0, 0, 4, 0}; 
 bool lastButtonRoller[4] = {LOW, LOW, LOW, LOW};
 
 const int buzzerPin = 6;
@@ -24,10 +37,12 @@ void setup() {
   digitalWrite(buzzerPin, LOW);
   for (int i = 2; i < 3; i++) {
     pinMode(ledPins[i], OUTPUT);
-    pinMode(buttonPins[i], INPUT_PULLUP);
+    pinMode(ledButtonPins[i], INPUT_PULLUP);
     pinMode(pirPins[i], INPUT);
     pinMode(rollerShades[i], OUTPUT);
     pinMode(rollerShadesButton[i], INPUT_PULLUP);
+    pinMode(pirLeds[i], OUTPUT);
+    pinMode(pirButton[i], INPUT_PULLUP);
     
   }
 }
@@ -37,6 +52,16 @@ void buzz(int durationMs) {
   lastBuzzTime = millis();
   buzzDuration = durationMs;
 }
+void buzzDuringRollerMovement(int durationMs) {
+  unsigned long start = millis();
+  while (millis() - start < durationMs) {
+    digitalWrite(buzzerPin, HIGH);
+    delay(100); // Durée du bip
+    digitalWrite(buzzerPin, LOW);
+    delay(200); // Pause entre bips
+  }
+}
+
 
 void handleBuzz() {
   if (buzzDuration > 0 && millis() - lastBuzzTime >= buzzDuration) {
@@ -74,16 +99,26 @@ void loop() {
 
   // Gérer les boutons LEDS
   for (int i = 2; i < 3; i++) {
-    bool state = digitalRead(buttonPins[i]);
-    if (state != lastButtonStates[i]) {
+    bool state = digitalRead(ledButtonPins[i]);
+    if (state != lastButtonStatesLed[i]) {
       if (state == LOW) {
         Serial.print(i + 1);
         Serial.println(":LED_BUTTON_PRESSED");
       }
-      lastButtonStates[i] = state;
+      lastButtonStatesLed[i] = state;
     }
   }
-
+    // Gérer les boutons Motion LEDS
+  for (int i = 2; i < 3; i++) {
+    bool state = digitalRead(pirButton[i]);
+    if (state != lastButtonStatesPirLed[i]) {
+      if (state == LOW) {
+        Serial.print(i + 1);
+        Serial.println(":MOTION_LED_BUTTON_PRESSED");
+      }
+      lastButtonStatesPirLed[i] = state;
+    }
+  }
     // Gérer les boutons rollerShades
   for (int i = 2; i < 3; i++) {
     bool state = digitalRead(rollerShadesButton[i]);
@@ -98,6 +133,7 @@ void loop() {
 
   // Gérer les capteurs PIR
   for (int i = 2; i < 3; i++) {
+    if (pirEnabled[i]) {
     bool motion = digitalRead(pirPins[i]);
     if (motion != lastMotionStates[i]) {
       if (motion == HIGH) {
@@ -105,6 +141,7 @@ void loop() {
         Serial.println(":MOTION_DETECTED");
       }
       lastMotionStates[i] = motion;
+    }
     }
   }
 
@@ -132,7 +169,15 @@ void loop() {
       int rollerIndex = id.substring(6).toInt() - 1;
       if (rollerIndex >= 0 && rollerIndex < 4) {
         digitalWrite(rollerShades[rollerIndex], (state == "ON") ? HIGH : LOW);
-        buzz(600);
+        buzzDuringRollerMovement(2000);
+      }
+    }
+        // Commande MOTION_STATUS 
+    if (id.startsWith("MOTION")) {
+      int PirIndex = id.substring(6).toInt() - 1;
+      if (PirIndex >= 0 && PirIndex < 4) {
+        digitalWrite(pirLeds[PirIndex], (state == "ON") ? HIGH : LOW);
+        buzz(300);
       }
     }
   }

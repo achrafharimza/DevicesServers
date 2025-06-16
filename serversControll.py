@@ -28,6 +28,14 @@ def send_to_arduino_Roller(roller_id, state):
         arduino.write(command.encode())
         print(f"[roller_shades] Commande envoyée à Arduino : {command.strip()}")
 
+# --- FONCTIONS MQTT POUR LED motion_detected ---
+def send_to_arduino_MOTION_STATUS(lamp_id, state):
+    if state in ["ON", "OFF"] and lamp_id in lamp_states:
+        #command = f"{lamp_id}:{state}\n"
+        command = f"MOTION{lamp_id}:{state}\n"
+        arduino.write(command.encode())
+        print(f"[LAMPE] Commande envoyée à Arduino : {command.strip()}")
+
 # --- FONCTIONS MQTT POUR LES CAPTEURS ---
 def send_motion_detected(client, sensor_id):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -70,6 +78,7 @@ def on_message(client, userdata, msg):
         elif topic == "motionDetector/command":
             if device_id in motion_detector_states and state in ["ON", "OFF"]:
                 motion_detector_states[device_id] = state
+                send_to_arduino_MOTION_STATUS(device_id, state)
                 client.publish("motionDetector/status", json.dumps({"id": device_id, "etat": state}))
             else:
                 print("Commande capteur invalide")
@@ -109,6 +118,14 @@ def main():
                         new_state = "OFF" if current == "ON" else "ON"
                         cmd = json.dumps({"id": lamp_id, "etat": new_state})
                         client.publish("lampe/command", cmd)
+                
+                elif ":MOTION_LED_BUTTON_PRESSED" in line:
+                    lamp_id = line.split(":")[0]
+                    if lamp_id in lamp_states:
+                        current = lamp_states[lamp_id]
+                        new_state = "OFF" if current == "ON" else "ON"
+                        cmd = json.dumps({"id": lamp_id, "etat": new_state})
+                        client.publish("motionDetector/command", cmd)
                 
                 elif ":ROLLER_BUTTON_PRESSED" in line:
                     roller_id = line.split(":")[0]
