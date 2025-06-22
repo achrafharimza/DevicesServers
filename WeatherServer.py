@@ -45,7 +45,7 @@ def publish_weather():
             payload = json.dumps(weather_data)
             client.publish(TOPIC, payload)
             print(f"Données météo publiées : {payload}")
-        time.sleep(900)  # Met à jour toutes les 5 minutes
+        time.sleep(100)  # Met à jour toutes les 5 minutes
 
 if __name__ == "__main__":
     try:

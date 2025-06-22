@@ -3,6 +3,33 @@ import json
 import serial
 import time
 from datetime import datetime
+import requests  # pour API météo
+import threading
+
+# Configuration OpenWeatherMap
+API_KEY = "5fa988728912c96f18d5abbb35a0a12f"
+CITY = "Casablanca"
+API_URL = f"http://api.openweathermap.org/data/2.5/weather?q={CITY}&appid={API_KEY}&units=metric"
+
+def get_weather_data():
+    try:
+        response = requests.get(API_URL)
+        data = response.json()
+        if response.status_code == 200:
+            weather_info = {
+                "temperature": data["main"]["temp"],
+                "temp_max": data["main"]["temp_max"],
+                "temp_min": data["main"]["temp_min"],
+                "wind": round(data["wind"]["speed"] * 3.6, 2),
+                "humidity": data["main"]["humidity"]
+            }
+            return weather_info
+        else:
+            print(f"Erreur API météo : {data}")
+            return None
+    except Exception as e:
+        print(f"Erreur lors de la récupération météo : {e}")
+        return None
 
 # Connexion série à l'Arduino (une seule fois)
 arduino = serial.Serial('COM13', 9600, timeout=1)
@@ -122,6 +149,18 @@ def main():
     broker = "broker.hivemq.com"
     client.connect(broker, 1883, 60)
     client.loop_start()
+    def publish_weather_periodically():
+        while True:
+            weather_data = get_weather_data()
+            if weather_data:
+                payload = json.dumps(weather_data)
+                client.publish("weather/status", payload)
+                print(f"[WEATHER] Données publiées : {payload}")
+            time.sleep(900)  # toutes les ~5 minutes
+
+    # Lancer dans un thread séparé
+    threading.Thread(target=publish_weather_periodically, daemon=True).start()
+
 
     try:
         while True:
