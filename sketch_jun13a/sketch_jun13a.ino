@@ -6,24 +6,24 @@ const int pirPins[4] = {0, 0, 13, 0};
 bool lastMotionStates[4] = {LOW, LOW, LOW, LOW};
 
 const int pirLeds[4] = {0, 0, 12, 0}; 
-const int pirButton[4] = {0, 0, 11, 0};
+const int pirButtonPins[4] = {0, 0, 11, 0};
 bool lastButtonStatesPirLed[4] = {HIGH, HIGH, HIGH, HIGH};
 
 bool pirEnabled[4] = {false, false, true, false}; // exemple : seul PIR[2] activé
-
-
-
-
-
 
 const int rollerShades[4] = {0, 0, 7, 0}; 
 const int rollerShadesButton[4] = {0, 0, 4, 0}; 
 bool lastButtonRoller[4] = {LOW, LOW, LOW, LOW};
 
+const int airControl[4] = {0, 0, A2, 0}; 
+const int airControlButton[4] = {0, 0, 10, 0};
+const int airControlLed[4] = {0, 0, 9, 0}; 
+bool lastButtonAirControl[4] = {LOW, LOW, LOW, LOW};
+
 const int buzzerPin = 6;
 const int tempPin = A1;
 const int gasPin = A0;
-
+const int FANPINs = A2;
 float temperature;
 
 unsigned long lastTempTime = 0;
@@ -42,9 +42,15 @@ void setup() {
     pinMode(rollerShades[i], OUTPUT);
     pinMode(rollerShadesButton[i], INPUT_PULLUP);
     pinMode(pirLeds[i], OUTPUT);
-    pinMode(pirButton[i], INPUT_PULLUP);
-    
+    pinMode(pirButtonPins[i], INPUT_PULLUP);
+    pinMode(ledPins[i], OUTPUT);
+    pinMode(ledPins[i], OUTPUT);
+
+    pinMode(airControl[i], OUTPUT);
+    pinMode(airControlLed[i], OUTPUT);
+    pinMode(airControlButton[i], INPUT_PULLUP);
   }
+
 }
 
 void buzz(int durationMs) {
@@ -71,6 +77,7 @@ void handleBuzz() {
 }
 
 void loop() {
+
   unsigned long now = millis();
 
   // TEMPÉRATURE toutes les 1000ms
@@ -85,7 +92,7 @@ void loop() {
 
   // GAZ toutes les 2000ms
  // if (false) {
-  if (now - lastGasTime >= 2000) {
+  if (now - lastGasTime >= 4000) {
     int gasVal = analogRead(gasPin);
     Serial.print("Sensor Value: ");
     Serial.print(gasVal);
@@ -110,7 +117,7 @@ void loop() {
   }
     // Gérer les boutons Motion LEDS
   for (int i = 2; i < 3; i++) {
-    bool state = digitalRead(pirButton[i]);
+    bool state = digitalRead(pirButtonPins[i]);
     if (state != lastButtonStatesPirLed[i]) {
       if (state == LOW) {
         Serial.print(i + 1);
@@ -128,6 +135,17 @@ void loop() {
         Serial.println(":ROLLER_BUTTON_PRESSED");
       }
       lastButtonRoller[i] = state;
+    }
+  }
+      // Gérer les boutons Aircontroll
+  for (int i = 2; i < 3; i++) {
+    bool state = digitalRead(airControlButton[i]);
+    if (state != lastButtonAirControl[i]) {
+      if (state == LOW) {
+        Serial.print(i + 1);
+        Serial.println(":AIR_BUTTON_PRESSED");
+      }
+      lastButtonAirControl[i] = state;
     }
   }
 
@@ -170,6 +188,15 @@ void loop() {
       if (rollerIndex >= 0 && rollerIndex < 4) {
         digitalWrite(rollerShades[rollerIndex], (state == "ON") ? HIGH : LOW);
         buzzDuringRollerMovement(2000);
+      }
+    }
+        // Commande AIRCONTROL 
+    if (id.startsWith("AIR")) {
+      int airIndex = id.substring(3).toInt() - 1;
+      if (airIndex >= 0 && airIndex < 4) {
+        digitalWrite(airControl[airIndex], (state == "ON") ? HIGH : LOW);
+        digitalWrite(airControlLed[airIndex], (state == "ON") ? HIGH : LOW);
+        
       }
     }
         // Commande MOTION_STATUS 
