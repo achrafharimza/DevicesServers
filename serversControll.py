@@ -235,3 +235,18 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# l’URL publique ngrok change à chaque redémarrage (en mode gratuit).
+
+# Quand tu redémarres ton PC :
+# Tu relances ngrok :
+
+# ngrok http 8080
+# Tu copies le nouvel URL HTTPS que ngrok t’affiche.
+
+# Tu ré-exécutes la commande curl setWebhook avec ce nouvel URL :
+
+# bash
+# Copier
+# Modifier
+# curl -X POST "https://api.telegram.org/bot<TON_TOKEN>/setWebhook?url=<NEW_NGROK_URL>/telegram/we

@@ -81,8 +81,8 @@ void loop() {
   unsigned long now = millis();
 
   // TEMPÉRATURE toutes les 1000ms
-   if (false) {
-  //if (now - lastTempTime >= 1000) {
+   //if (false) {
+  if (now - lastTempTime >= 4000) {
     int val = analogRead(tempPin);
     temperature = val * (5.0 / 1024.0) * 100.0;
     Serial.print("TEMP:");
@@ -91,8 +91,8 @@ void loop() {
   }
 
   // GAZ toutes les 2000ms
- // if (false) {
-  if (now - lastGasTime >= 4000) {
+  if (false) {
+ // if (now - lastGasTime >= 4000) {
     int gasVal = analogRead(gasPin);
     Serial.print("Sensor Value: ");
     Serial.print(gasVal);
